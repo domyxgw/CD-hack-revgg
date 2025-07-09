@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Gra Matematyczna</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: #2196F3; /* niebieskie tło */
+      font-family: Arial, sans-serif;
+    }
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #game {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      border: 3px solid #333;
+      background: white;
+      overflow: hidden;
+    }
+    .equation {
+      position: absolute;
+      font-size: 24px;
+      font-weight: bold;
+      white-space: nowrap;
+      background-color: #0D47A1; /* granatowy */
+      color: white;
+      padding: 5px 10px;
+      border-radius: 12px; /* zaokrąglenie */
+    }
+    #input {
+      margin-top: 10px;
+      width: 394px;
+      padding: 10px;
+      font-size: 18px;
+      border: 2px solid #333;
+      box-sizing: border-box;
+    }
+    #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 32px;
+      font-weight: bold;
+      color: red;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    #restart-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #0D47A1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="game">
+      <div id="game-over">
+        PRZEGRAŁEŚ
+        <button id="restart-btn">Graj dalej</button>
+      </div>
+    </div>
+    <input type="text" id="input" placeholder="" autocomplete="off">
+  </div>
+
+  <script>
+    const game = document.getElementById('game');
+    const input = document.getElementById('input');
+    const gameOverDisplay = document.getElementById('game-over');
+    const restartBtn = document.getElementById('restart-btn');
+
+    let equations = [];
+    let speed = 1;
+    let animationId;
+    let equationInterval;
+
+    function getRandomEquation() {
+      const a = Math.floor(Math.random() * 50) + 1;
+      const b = Math.floor(Math.random() * 50) + 1;
+      const op = ['+', '-', '*', '/'][Math.floor(Math.random() * 4)];
+      let question, answer;
+
+      switch (op) {
+        case '+': question = `${a} + ${b}`; answer = a + b; break;
+        case '-': question = `${a} - ${b}`; answer = a - b; break;
+        case '*': question = `${a} * ${b}`; answer = a * b; break;
+        case '/':
+          const num = a * b;
+          question = `${num} / ${a}`;
+          answer = b;
+          break;
+      }
+      return { question, answer };
+    }
+
+    function spawnEquation() {
+      const { question, answer } = getRandomEquation();
+      const div = document.createElement('div');
+      div.className = 'equation';
+      div.textContent = question;
+      div.style.whiteSpace = 'nowrap';
+      const x = Math.random() * (game.clientWidth - 100);
+      div.style.left = `${x}px`;
+      div.style.top = '0px';
+      game.appendChild(div);
+      equations.push({ element: div, answer, y: 0, x });
+    }
+
+    function gameOver() {
+      cancelAnimationFrame(animationId);
+      clearInterval(equationInterval);
+      input.disabled = true;
+      gameOverDisplay.style.display = 'flex';
+      equations.forEach(eq => game.removeChild(eq.element));
+      equations = [];
+    }
+
+    function animate() {
+      equations.forEach(eq => {
+        eq.y += speed;
+        eq.element.style.top = `${eq.y}px`;
+        if (eq.y > 400) {
+          gameOver();
+        }
+      });
+      animationId = requestAnimationFrame(animate);
+    }
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const value = parseFloat(input.value);
+        const matchedIndex = equations.findIndex(eq => value === eq.answer);
+        if (matchedIndex !== -1) {
+          game.removeChild(equations[matchedIndex].element);
+          equations.splice(matchedIndex, 1);
+          input.value = '';
+        }
+      }
+    });
+
+    restartBtn.addEventListener('click', () => {
+      gameOverDisplay.style.display = 'none';
+      input.disabled = false;
+      input.value = '';
+      for (let i = 0; i < 5; i++) {
+        setTimeout(spawnEquation, i * 500);
+      }
+      equationInterval = setInterval(() => {
+        if (equations.length < 5) {
+          spawnEquation();
+        }
+      }, 3000);
+      animate();
+    });
+
+    // Start game initially
+    restartBtn.click();
+  </script>
+</body>
+</html>
